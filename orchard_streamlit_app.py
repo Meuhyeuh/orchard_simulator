@@ -37,7 +37,7 @@ edited_species_df = st.data_editor(
             min_value=0.0, max_value=1.0, step=0.1, format="%.1f"
         ),
         "Susceptibility": st.column_config.SelectboxColumn(options=SUSCEPTIBILITY_OPTIONS),
-        "Color": st.column_config.ColorColumn()
+        "Color": st.column_config.TextColumn()
     },
     use_container_width=True
 )
@@ -45,7 +45,12 @@ edited_species_df = st.data_editor(
 # Enforce unique species names
 if edited_species_df['Species'].duplicated().any():
     st.error("Species names must be unique.")
-    st.stop()
+    st.stop(),
+        "Susceptibility": st.column_config.SelectboxColumn(options=SUSCEPTIBILITY_OPTIONS),
+        "Color": st.column_config.TextColumn()  # Replace ColorColumn with TextColumn for compatibility
+    },
+    use_container_width=True
+)
 
 SPECIES = []
 probabilities = {}
