@@ -47,15 +47,6 @@ if edited_species_df['Species'].duplicated().any():
     st.error("Species names must be unique.")
     st.stop()
 
-# Enforce unique species names
-if edited_species_df['Species'].duplicated().any():
-    st.error("Species names must be unique.")
-    st.stop()
-        "Susceptibility": st.column_config.SelectboxColumn(options=SUSCEPTIBILITY_OPTIONS),
-        "Color": st.column_config.TextColumn()  # Replace ColorColumn with TextColumn for compatibility
-    },
-    use_container_width=True
-)
 
 SPECIES = []
 probabilities = {}
