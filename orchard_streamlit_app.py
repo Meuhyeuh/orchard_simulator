@@ -47,7 +47,6 @@ if edited_species_df['Species'].duplicated().any():
     st.error("Species names must be unique.")
     st.stop()
 
-
 SPECIES = []
 probabilities = {}
 susceptibility_map = {}
@@ -100,7 +99,12 @@ def generate_orchard():
     return grid
 
 if st.button("Simulate Orchard"):
+    species_counts = {s["name"]: 0 for s in SPECIES}
     grid = generate_orchard()
+    for i in range(num_rows):
+        for j in range(num_cols):
+            species_name = ID_TO_NAME[grid[i, j]]
+            species_counts[species_name] += 1
     fig, ax = plt.subplots(figsize=(12, 2.5))
     color_array = np.vectorize(COLOR_MAP.get)(grid)
     ax.imshow(grid, cmap=None)
@@ -117,6 +121,11 @@ if st.button("Simulate Orchard"):
     ax.legend(handles, labels, loc='upper right', bbox_to_anchor=(1.15, 1))
 
     st.pyplot(fig)
+    st.subheader("Tree Counts by Species")
+    total_trees = sum(species_counts.values())
+    species_df = pd.DataFrame.from_dict(species_counts, orient='index', columns=['Tree Count'])
+    species_df['Percentage'] = (species_df['Tree Count'] / total_trees * 100).round(1).astype(str) + '%'
+    st.write(species_df)
     st.success("Simulation complete!")
 
     name_grid = np.vectorize(ID_TO_NAME.get)(grid)
