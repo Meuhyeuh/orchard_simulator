@@ -8,21 +8,11 @@ from openpyxl.styles import PatternFill
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.utils import get_column_letter
 
-# === SPECIES SETUP ===
-SPECIES = [
-    {"name": "Golden",     "id": 0},
-    {"name": "Liberty",    "id": 1},
-    {"name": "Enterprise", "id": 2},
-]
-
 COLOR_MAP = {
     0: "#7FB77E",  # Golden
     1: "#F4A261",  # Liberty
     2: "#8D6E63",  # Enterprise
 }
-
-ID_TO_NAME = {s["id"]: s["name"] for s in SPECIES}
-ID_TO_COLOR = {s["id"]: COLOR_MAP[s["id"]] for s in SPECIES}
 
 SUSCEPTIBILITY_OPTIONS = ["high", "medium", "low"]
 CLUSTER_PENALTY = {
@@ -38,22 +28,45 @@ st.write("Design a multi-species orchard that limits disease spread.")
 num_rows = st.slider("Number of Rows", 3, 20, 6)
 num_cols = st.slider("Trees per Row", 10, 50, 25)
 
-st.subheader("Species Parameters")
+st.subheader("Define Your Tree Species")
+default_species = pd.DataFrame([
+    {"Species": "Golden", "Probability": 0.3, "Susceptibility": "high"},
+    {"Species": "Liberty", "Probability": 0.4, "Susceptibility": "medium"},
+    {"Species": "Enterprise", "Probability": 0.3, "Susceptibility": "low"},
+])
+
+edited_species_df = st.data_editor(
+    default_species,
+    num_rows="dynamic",
+    column_config={
+        "Probability": st.column_config.NumberColumn(min_value=0.0, max_value=1.0, step=0.05),
+        "Susceptibility": st.column_config.SelectboxColumn(options=SUSCEPTIBILITY_OPTIONS),
+    },
+    use_container_width=True
+)
+
+SPECIES = []
 probabilities = {}
 susceptibility_map = {}
-for species in SPECIES:
-    prob = st.slider(
-        f"Probability of planting {species['name']}",
-        0.0, 1.0, 0.3
-    )
-    probabilities[species["id"]] = prob
+COLOR_MAP = {}
 
-    susceptibility = st.selectbox(
-        f"Susceptibility of {species['name']}",
-        SUSCEPTIBILITY_OPTIONS,
-        index=SUSCEPTIBILITY_OPTIONS.index("medium")
-    )
-    susceptibility_map[species["id"]] = susceptibility
+# Assign colors dynamically
+color_palette = ["#7FB77E", "#F4A261", "#8D6E63", "#A1C298", "#F6BD60", "#84A59D", "#F28482"]
+
+for idx, (i, row) in enumerate(edited_species_df.iterrows()):
+    species_id = idx
+    name = row["Species"]
+    prob = row["Probability"]
+    susc = row["Susceptibility"]
+    color = color_palette[idx % len(color_palette)]
+
+    SPECIES.append({"id": species_id, "name": name})
+    probabilities[species_id] = prob
+    susceptibility_map[species_id] = susc
+    COLOR_MAP[species_id] = color
+
+ID_TO_NAME = {s["id"]: s["name"] for s in SPECIES}
+ID_TO_COLOR = {s["id"]: COLOR_MAP[s["id"]] for s in SPECIES}
 
 # Normalize probabilities
 total = sum(probabilities.values())
