@@ -21,7 +21,6 @@ st.write("Design a multi-species orchard that limits disease spread.")
 
 num_rows = st.slider("Number of Rows", 3, 20, 6)
 num_cols = st.slider("Trees per Row", 10, 50, 25)
-repetition_factor = st.slider("Repetition Factor (Row Similarity)", 0.0, 1.0, 0.9, step=0.1)
 
 st.subheader("Define Your Tree Species")
 default_species = pd.DataFrame([
@@ -47,6 +46,7 @@ edited_species_df = st.data_editor(
 if edited_species_df['Species'].duplicated().any():
     st.error("Species names must be unique.")
     st.stop()
+
 
 SPECIES = []
 probabilities = {}
@@ -95,31 +95,26 @@ def choose_species(i, j, grid):
 def generate_orchard():
     grid = np.full((num_rows, num_cols), -1)
     for i in range(num_rows):
-        if i % 2 == 0:
-            # Odd-indexed row: generate as usual
-            for j in range(num_cols):
-                grid[i, j] = choose_species(i, j, grid)
-        else:
-            # Even-indexed row: mimic the row above with some variation
-            for j in range(num_cols):
-                above = grid[i - 1, j]
-                if np.random.rand() < repetition_factor:
-                    grid[i, j] = above
-                else:
-                    alt_species = [s["id"] for s in SPECIES if s["id"] != above]
-                    alt_probs = [norm_probs[aid] for aid in alt_species]
-                    total = sum(alt_probs)
-                    norm_alt_probs = [p / total for p in alt_probs]
-                    grid[i, j] = np.random.choice(alt_species, p=norm_alt_probs)
+        for j in range(num_cols):
+            grid[i, j] = choose_species(i, j, grid)
     return grid
 
 if st.button("Simulate Orchard"):
-    species_counts = {s["name"]: 0 for s in SPECIES}
     grid = generate_orchard()
+
+    species_counts = {s["name"]: 0 for s in SPECIES}
     for i in range(num_rows):
         for j in range(num_cols):
             species_name = ID_TO_NAME[grid[i, j]]
             species_counts[species_name] += 1
+
+    total_trees = sum(species_counts.values())
+    species_df = pd.DataFrame.from_dict(species_counts, orient='index', columns=['Tree Count'])
+    species_df['Percentage'] = (species_df['Tree Count'] / total_trees * 100).round(1).astype(str) + '%'
+
+    st.subheader("Tree Counts by Species")
+    st.write(species_df)
+    
     fig, ax = plt.subplots(figsize=(12, 2.5))
     color_array = np.vectorize(COLOR_MAP.get)(grid)
     ax.imshow(grid, cmap=None)
@@ -136,11 +131,6 @@ if st.button("Simulate Orchard"):
     ax.legend(handles, labels, loc='upper right', bbox_to_anchor=(1.15, 1))
 
     st.pyplot(fig)
-    st.subheader("Tree Counts by Species")
-    total_trees = sum(species_counts.values())
-    species_df = pd.DataFrame.from_dict(species_counts, orient='index', columns=['Tree Count'])
-    species_df['Percentage'] = (species_df['Tree Count'] / total_trees * 100).round(1).astype(str) + '%'
-    st.write(species_df)
     st.success("Simulation complete!")
 
     name_grid = np.vectorize(ID_TO_NAME.get)(grid)
